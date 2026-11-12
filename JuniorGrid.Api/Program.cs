@@ -15,6 +15,10 @@ builder.WebHost.ConfigureKestrel(o =>
     o.Limits.MaxRequestBodySize = 10 * 1024;
 });
 
+var connectionString = builder.Configuration.GetConnectionString("Conexion");
+Console.WriteLine($"\n==================================================");
+Console.WriteLine($"--> CONEXIÓN EN USO: {connectionString}");
+Console.WriteLine($"==================================================\n");
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Conexion")));
@@ -140,20 +144,20 @@ else
 }
 
 // Aplicación automática de migraciones de base de datos al arrancar
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        var dbContext = services.GetRequiredService<AppDbContext>();
-        await dbContext.Database.MigrateAsync();
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Error al aplicar migraciones automáticas en la base de datos.");
-    }
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var services = scope.ServiceProvider;
+//    try
+//    {
+//        var dbContext = services.GetRequiredService<AppDbContext>();
+//        await dbContext.Database.MigrateAsync();
+//    }
+//    catch (Exception ex)
+//    {
+//        var logger = services.GetRequiredService<ILogger<Program>>();
+//        logger.LogError(ex, "Error al aplicar migraciones automáticas en la base de datos.");
+//    }
+//}
 
 app.UseCors("AllowFrontend");
 

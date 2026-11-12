@@ -4,4 +4,6 @@ obj/
 *.user
 appsettings.Development.json
 appsettings.json
-appsettings.Production.json
+package-lock.json
+package.json
+node_modules/
