@@ -15,11 +15,9 @@ builder.WebHost.ConfigureKestrel(o =>
     o.Limits.MaxRequestBodySize = 10 * 1024;
 });
 
-// BD (la cadena de conexión va en user-secrets o variable de entorno, no en el appsettings)
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("Conexion")
-    ));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Conexion")));
 
 // Repositorios y servicios
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
