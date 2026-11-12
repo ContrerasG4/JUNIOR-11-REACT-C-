@@ -16,9 +16,8 @@ builder.WebHost.ConfigureKestrel(o =>
 });
 
 var connectionString = builder.Configuration.GetConnectionString("Conexion");
-Console.WriteLine($"\n==================================================");
 Console.WriteLine($"--> CONEXIÓN EN USO: {connectionString}");
-Console.WriteLine($"==================================================\n");
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Conexion")));
