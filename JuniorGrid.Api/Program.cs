@@ -57,6 +57,11 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("IpRateLimit", httpContext =>
     {
+        // Si es una petición preflight (OPTIONS), no la contamos en el límite
+        if (HttpMethods.IsOptions(httpContext.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("preflight");
+        }
         var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonimo";
 
         return RateLimitPartition.GetFixedWindowLimiter(
@@ -112,6 +117,8 @@ if (behindProxy)
     app.UseForwardedHeaders();
 }
 
+app.UseCors("AllowFrontend");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -119,7 +126,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseHttpsRedirection();
+    //app.UseHttpsRedirection();
 
     app.UseExceptionHandler(errorApp => errorApp.Run(async ctx =>
     {
@@ -159,7 +166,6 @@ else
 //    }
 //}
 
-app.UseCors("AllowFrontend");
 
 app.UseRateLimiter();
 
