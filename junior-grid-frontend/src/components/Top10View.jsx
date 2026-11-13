@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import { getTop10Reto } from '../api/gameApi'; 
 export const Top10View = () => {
   const [reto, setReto] = useState(null);
   const [aciertos, setAciertos] = useState(Array(10).fill(null));
@@ -10,9 +10,7 @@ export const Top10View = () => {
     setLoading(true);
     setAciertos(Array(10).fill(null)); // Reiniciamos los aciertos
     try {
-      const response = await fetch('http://localhost:5000/api/top10/reto');
-      if (!response.ok) throw new Error('Error al obtener el reto Top 10');
-      const data = await response.json();
+      const data = await getTop10Reto(); 
       setReto(data);
     } catch (err) {
       console.error(err);
