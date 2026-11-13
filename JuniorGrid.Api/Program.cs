@@ -99,7 +99,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader() 
-              .AllowAnyMethod() 
+              .AllowAnyMethod()
+              .SetIsOriginAllowed(_ => true)
     );
 });
 
@@ -109,13 +110,17 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Pipeline (el orden importa)
+// Pipeline 
 
 // Antes del rate limiter, para que lea la IP real del cliente
 if (behindProxy)
 {
     app.UseForwardedHeaders();
 }
+
+
+app.UseRouting();
+
 
 app.UseCors("AllowFrontend");
 
@@ -126,22 +131,18 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    //app.UseHttpsRedirection();
+    //app.UseHttpsRedirection(); 
 
     app.UseExceptionHandler(errorApp => errorApp.Run(async ctx =>
     {
         var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
-
-        // Si el error es del cliente (body muy grande, request mal formado) se respeta su código
         var status = ex is BadHttpRequestException bad ? bad.StatusCode : 500;
-
         var mensaje = status switch
         {
             413 => "La solicitud es demasiado grande.",
             < 500 => "Solicitud inválida.",
             _ => "Ocurrió un error inesperado."
         };
-
         ctx.Response.StatusCode = status;
         ctx.Response.ContentType = "application/json";
         await ctx.Response.WriteAsync($"{{\"mensaje\":\"{mensaje}\"}}");
@@ -149,23 +150,6 @@ else
 
     app.UseHsts();
 }
-
-// Aplicación automática de migraciones de base de datos al arrancar
-//using (var scope = app.Services.CreateScope())
-//{
-//    var services = scope.ServiceProvider;
-//    try
-//    {
-//        var dbContext = services.GetRequiredService<AppDbContext>();
-//        await dbContext.Database.MigrateAsync();
-//    }
-//    catch (Exception ex)
-//    {
-//        var logger = services.GetRequiredService<ILogger<Program>>();
-//        logger.LogError(ex, "Error al aplicar migraciones automáticas en la base de datos.");
-//    }
-//}
-
 
 app.UseRateLimiter();
 
