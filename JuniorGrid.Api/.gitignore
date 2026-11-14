@@ -2,7 +2,7 @@ bin/
 obj/
 .vs/
 *.user
-
+appsettings.Development.json
 appsettings.json
 package-lock.json
 package.json
