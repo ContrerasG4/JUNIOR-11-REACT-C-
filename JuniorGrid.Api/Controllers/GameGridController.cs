@@ -1,9 +1,10 @@
 using JuniorGrid.Api.DTOs;
 using JuniorGrid.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.AspNetCore.Authorization;
 namespace JuniorGrid.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class GameGridController : ControllerBase
