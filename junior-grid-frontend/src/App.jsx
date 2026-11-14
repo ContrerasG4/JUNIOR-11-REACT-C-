@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getNuevoTablero } from './api/gameApi';
 import { Grid } from './components/Grid';
-import { Top10View } from './components/Top10View'; // <--- Importamos el componente Top 10
+import { Top10View } from './components/Top10View'; 
 
 export default function App() {
   const [vista, setVista] = useState('grilla'); // 'grilla' o 'top10'
@@ -96,7 +96,7 @@ export default function App() {
           )}
         </>
       ) : (
-        /* Renderizamos el componente Top 10 real */
+      
         <Top10View />
       )}
     </div>
