@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,28 +10,46 @@ using System.Text;
 public class AuthController : ControllerBase
 {
     private readonly IConfiguration _config;
-    public AuthController(IConfiguration config) { _config = config; }
 
+    public AuthController(IConfiguration config)
+    {
+        _config = config;
+    }
+
+    [AllowAnonymous]
     [HttpPost("sesion")]
     public IActionResult CrearSesion()
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var jwtSecret = _config["JwtSettings:SecretKey"] ?? "ClavePorDefectoParaDesarrollo1234567890";
-        var key = Encoding.ASCII.GetBytes(jwtSecret);
 
-        // Creamos el token (dura 2 horas, por ejemplo)
+        var jwtSecret = _config["JwtSettings:SecretKey"]
+            ?? throw new InvalidOperationException(
+                "No se ha configurado la clave JWT.");
+
+        var key = Encoding.UTF8.GetBytes(jwtSecret);
+
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(new[]
             {
-                new Claim("SessionId", Guid.NewGuid().ToString()),
-                new Claim("IP", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown")
+                new Claim("SessionId", Guid.NewGuid().ToString())
             }),
+
+            Issuer = "JuniorGrid.Api",
+            Audience = "JuniorGrid.Client",
+
             Expires = DateTime.UtcNow.AddHours(2),
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);
-        return Ok(new { token = tokenHandler.WriteToken(token) });
+
+        return Ok(new
+        {
+            token = tokenHandler.WriteToken(token)
+        });
     }
 }

@@ -5,7 +5,7 @@ using JuniorGrid.Api.Services;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Text; 
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
@@ -17,10 +17,6 @@ builder.WebHost.ConfigureKestrel(o =>
     o.AddServerHeader = false;
     o.Limits.MaxRequestBodySize = 10 * 1024;
 });
-
-var connectionString = builder.Configuration.GetConnectionString("Conexion");
-Console.WriteLine($"--> CONEXIÓN EN USO: {connectionString}");
-
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Conexion")));
@@ -101,32 +97,40 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
         policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader() 
+              .AllowAnyHeader()
               .AllowAnyMethod()
               .SetIsOriginAllowed(_ => true)
     );
 });
-var jwtSecret = builder.Configuration["JwtSettings:SecretKey"] ?? "ClavePorDefectoParaDesarrollo1234567890";
-var key = Encoding.ASCII.GetBytes(jwtSecret);
+var jwtSecret = builder.Configuration["JwtSettings:SecretKey"]
+    ?? throw new InvalidOperationException(
+        "No se ha configurado la clave JWT.");
 
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
+var key = Encoding.UTF8.GetBytes(jwtSecret);
+
+builder.Services.AddAuthentication(
+    JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
-    options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false,
-        ValidateAudience = false
+
+        ValidateIssuer = true,
+        ValidIssuer = "JuniorGrid.Api",
+
+        ValidateAudience = true,
+        ValidAudience = "JuniorGrid.Client",
+
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+
+        ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
+
+        ClockSkew = TimeSpan.FromSeconds(30)
     };
 });
-
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -176,6 +180,10 @@ else
 }
 
 app.UseRateLimiter();
+
+app.UseMiddleware<ApiKeyMiddleware>();
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

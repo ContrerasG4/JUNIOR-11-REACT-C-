@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const API_KEY = import.meta.env.VITE_API_KEY || 'Junior11-teomaximoidolo'; 
+const API_KEY = import.meta.env.VITE_API_KEY
 
 let sessionToken = null;
 

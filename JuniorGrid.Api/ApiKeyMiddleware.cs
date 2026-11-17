@@ -1,34 +1,47 @@
 public class ApiKeyMiddleware
 {
-	private readonly RequestDelegate _next;
-	private const string ApiKeyHeaderName = "X-API-KEY";
+    private readonly RequestDelegate _next;
+    private readonly string _apiKey;
+    private const string ApiKeyHeaderName = "X-API-KEY";
 
-	public ApiKeyMiddleware(RequestDelegate next)
-	{
-		_next = next;
-	}
+    public ApiKeyMiddleware(
+        RequestDelegate next,
+        IConfiguration configuration)
+    {
+        _next = next;
 
-	public async Task InvokeAsync(HttpContext context)
-	{
-		// Si no viene la cabecera, rechazamos
-		if (!context.Request.Headers.TryGetValue(ApiKeyHeaderName, out var extractedApiKey))
-		{
-			context.Response.StatusCode = 401; 
-			await context.Response.WriteAsync("Falta la API Key.");
-			return;
-		}
+        _apiKey = configuration["ApiKey"]
+            ?? throw new InvalidOperationException(
+                "No se ha configurado la API Key.");
+    }
 
-		// Compara con la clave del appsettings
-		var appSettings = context.RequestServices.GetRequiredService<IConfiguration>();
-		var apiKey = appSettings.GetValue<string>("ApiKey");
+    public async Task InvokeAsync(HttpContext context)
+    {
+        if (HttpMethods.IsPost(context.Request.Method) &&
+            string.Equals(
+                context.Request.Path.Value?.TrimEnd('/'),
+                "/api/auth/sesion",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            if (!context.Request.Headers.TryGetValue(
+                    ApiKeyHeaderName, out var extractedApiKey)
+                || !string.Equals(
+                    _apiKey,
+                    extractedApiKey.ToString(),
+                    StringComparison.Ordinal))
+            {
+                context.Response.StatusCode =
+                    StatusCodes.Status401Unauthorized;
 
-		if (!apiKey.Equals(extractedApiKey))
-		{
-			context.Response.StatusCode = 401;
-			await context.Response.WriteAsync("API Key inválida.");
-			return;
-		}
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    mensaje = "API Key inválida o ausente."
+                });
 
-		await _next(context);
-	}
+                return;
+            }
+        }
+
+        await _next(context);
+    }
 }
