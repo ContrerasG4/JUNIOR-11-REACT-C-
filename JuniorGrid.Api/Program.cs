@@ -99,7 +99,6 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .SetIsOriginAllowed(_ => true)
     );
 });
 var jwtSecret = builder.Configuration["JwtSettings:SecretKey"]
